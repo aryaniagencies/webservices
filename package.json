@@ -1,0 +1,29 @@
+{
+  "name": "@your-scope/webservices",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": ["dist", "prisma"],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "prisma:generate": "prisma generate",
+    "sam:build": "npm run prisma:generate && npm run build && sam build",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.705.0",
+    "@aws-sdk/client-sesv2": "^3.705.0",
+    "@aws-sdk/s3-request-presigner": "^3.705.0",
+    "@prisma/client": "^6.1.0",
+    "marked": "^15.0.6",
+    "sanitize-html": "^2.14.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2",
+    "prisma": "^6.1.0"
+  }
+}
