@@ -6,9 +6,5 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 PUBLIC_API_URL = "http://localhost:8787"
 
-[[r2_buckets]]
-binding = "MEDIA_BUCKET"
-bucket_name = "webservices-media"
-
 [observability]
 enabled = true
