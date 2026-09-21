@@ -5,7 +5,6 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 PUBLIC_API_URL = "http://localhost:8787"
-ADMIN_EMAIL: "aryaniagencies@gmail.com"
 ADMIN_EMAIL_PASS: "xxgpaagpxx"
 
 [observability]
