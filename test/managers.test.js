@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { appendFile } from "node:fs/promises";
+import app from "../src/worker.js";
 import { communicationManager, dbmanager, cloudmanager, multimediaManager } from "../src/index.js";
+
+test("exports a Hono app instance", () => {
+  assert.equal(typeof app.request, "function");
+  assert.equal(typeof app.fetch, "function");
+});
 
 test("exports all managers without initializing service clients", () => {
   assert.equal(typeof communicationManager.sendEmail, "function");

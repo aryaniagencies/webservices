@@ -127,3 +127,9 @@ export function securityHeaders(headers = {}) {
     ...headers,
   };
 }
+
+export function handlerequest(input) {
+
+  
+
+}

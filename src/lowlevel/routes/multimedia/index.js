@@ -318,4 +318,3 @@ export const mediamanager = {
 };
 
 // Named Exports for Modules
-export { imageManager, videoManager, audioManager, mediamanager };

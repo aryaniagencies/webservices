@@ -30,7 +30,7 @@ export const dbhandler = {
       throw new TypeError("Database entry data must be an object");
     }
 
-    const database = getDatabase(env);
+    const database = this.getDatabase(env);
     const delegate = database?.[model];
 
     if (!delegate?.create) {
@@ -40,8 +40,8 @@ export const dbhandler = {
     return delegate.create({ data });
   },
 
-  async getDatabaseEntry(model, where) {
-    const database = getDatabase(env.);
+  async getDatabaseEntry(model, where, env = globalThis.process?.env ?? {}) {
+    const database = this.getDatabase(env);
     const delegate = database?.[model];
 
     if (!delegate?.findUnique) {
@@ -50,6 +50,11 @@ export const dbhandler = {
 
     return delegate.findUnique({ where });
   },
+};
 
-  databaseManager = { getDatabase, disconnectDatabase, addDatabaseEntry, getDatabaseEntry },
-}
+export const databaseManager = {
+  getDatabase: dbhandler.getDatabase,
+  disconnectDatabase: dbhandler.disconnectDatabase,
+  addDatabaseEntry: dbhandler.addDatabaseEntry,
+  getDatabaseEntry: dbhandler.getDatabaseEntry,
+};

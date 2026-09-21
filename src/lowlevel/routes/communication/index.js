@@ -1,7 +1,14 @@
 import { getConfig, requireConfig } from "../../../config/index.js";
-import { EmailMessage } from "cloudflare:email";
-import { addToDatabase } from "../../dbhandler/index.js";
-import { cloudmanager } from "../../../cloud/index.js";
+import { addToDatabase, dbhandler } from "../dbhandler/index.js";
+import { cloudmanager } from "../cloud/index.js";
+
+class EmailMessageCompat {
+  constructor(from, to, raw) {
+    this.from = from;
+    this.to = to;
+    this.raw = raw;
+  }
+}
 
 export const emailmanager = {
 
@@ -142,34 +149,65 @@ export const emailmanager = {
 
 export const communicationmanager = {
 
-  async comms(name, email, phone, reg, text, attachment) {
+  handlerequest(params) {
+
+    handlerequest: async (c) => {
+    // Incoming Request Object (Native Web Request)
+    const rawRequest = c.req.raw 
+    
+    // Body, headers, URL direct read kar sakte ho
+    const url = c.req.url
+    const method = c.req.method
+
+    // switch
+
+    // Response return kar do
+    return c.json({
+      status: "success",
+      message: "Request directly processed by Communication Manager!",
+      path: url
+    })
+  }
+  },
+  
+  async comms(req) {
+
+    const attachment='';
     const timestamp = new Date().toISOString();
     
     // Upload to cloudinary if attachment exists
-    const attachurl = attachment ? await cloudmanager.uploaditem(attachment, "cloudinary", { folder: "attachments" }) : null;
+    // const attachurl = body['attachment'] ? await cloudmanager.uploaditem(attachment, "cloudinary", { folder: "attachments" }) : null;
+    if (attachment && attachment instanceof File) {
 
+      // Agar file ka binary buffer/content chahiye:
+      const arrayBuffer = await attachment.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+      
+      // Yahan se buffer ko S3, Cloudinary par upload kar sakte ho
+      cloudmanager.upadloaditem(attachment, "cloudinary")
+    }
     // add to database
-    await addToDatabase(
+    /* await addToDatabase(
       {
-        name,
-        email,
-        phone,
-        reg,
-        text,
+        req.header('name'),
+        req.header('email'),
+        req.header('phone'),
+        req.header('regarding'),
+        req.body,
         attachment: attachurl || null,
       }
-    );
+    ); */
 
     const adminHtml = `
       <div style="text-align: center;">
-        <h1 style="color: pink;">New Message Received from: ${name}</h1>
+        <h1 style="color: pink;">New Message Received from: ${req.header('name')}</h1>
         <small> Received at: ${timestamp}</small><br/><br/>
-        <p>${text}</p><br/>
-        <p>Email: ${email}</p>
-        <p>Phone: ${phone}</p><br/>
-        <p>Attachment: ${attachurl ? `<a href="${attachurl}">View Attachment</a>` : "No attachment"}</p>
+        <p>${req.text()}</p><br/>
+        <p>Email: ${req.header('email')}</p>
+        <p>Phone: ${req.header('phone')}</p><br/>
       </div>
     `;
+    // <p>Attachment: ${attachurl ? `<a href="${google.com}">View Attachment</a>` : "No attachment"}</p>
     
     return sendEmail(
       {
@@ -180,6 +218,12 @@ export const communicationmanager = {
       }
     );
   },
+
+  async subscribe(email) {
+
+    // add a database entry to the subscribers list database
+    dbhandler.addDatabaseEntry(any , {email});
+  }
 
 }
 
@@ -232,8 +276,4 @@ export async function sendNotification(payload, env = {}) {
   };
 }
 
-export const communicationManager = {
-  sendEmail,
-  receive,
-  sendNotification,
-};
+

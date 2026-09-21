@@ -18,6 +18,7 @@
   "dependencies": {
     "@prisma/client": "^6.1.0",
     "@prisma/extension-accelerate": "^2.0.2",
+    "hono": "^4.9.0",
     "marked": "^15.0.6",
     "sanitize-html": "^2.14.0"
   },

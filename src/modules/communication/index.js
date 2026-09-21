@@ -1,7 +1,16 @@
-import { getConfig, requireConfig } from "../../../../config/index.js";
-import { EmailMessage } from "cloudflare:email";
-import { addToDatabase } from "../../dbhandler/index.js";
-import { cloudmanager } from "../../../cloud/index.js";
+import { getConfig, requireConfig } from "../../config/index.js";
+import { addToDatabase } from "../lowlevel/modules/dbhandler/index.js";
+import { cloudmanager } from "../lowlevel/modules/cloud/index.js";
+
+class EmailMessageCompat {
+  constructor(from, to, raw) {
+    this.from = from;
+    this.to = to;
+    this.raw = raw;
+  }
+}
+
+const EmailMessage = globalThis.EmailMessage ?? EmailMessageCompat;
 
 export const emailmanager = {
 

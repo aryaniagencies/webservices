@@ -1,9 +1,38 @@
 const encoder = new TextEncoder();
-const cloudinary = require("cloudinary").v2; 
+
+export const cloudinaryManager = {
+    async uploadMedia() {
+        throw new Error("Cloudinary upload is not configured in this environment");
+    },
+    async fetchMedia(url, env = {}) {
+        if (!url) throw new Error("Cloudinary media URL is required");
+        const response = await fetch(url, env);
+        if (!response.ok) throw new Error(`Cloudinary media fetch failed [${response.status}]`);
+        return response;
+    },
+    async deleteMedia() {
+        throw new Error("Cloudinary deletion is not configured in this environment");
+    },
+};
+
+export async function getCloudItem(link, env = {}) {
+    if (!link) throw new Error("Cloud item URL is required");
+    const response = await fetch(link, env);
+    return { response, status: response.status };
+}
 
 export const cloudmanager= {
 
     provider,
+
+    handlerequest(params) {
+
+        switch(params[1]) {
+
+            default: 
+                return null;
+        };
+    },
 
     //get cloud provider from link
     getcloudprovier(link) {
@@ -90,7 +119,7 @@ export const gdrivemanager = {
 
 export const gphotosmanager = {
 
-    var PHOTOS_API = "https://photoslibrary.googleapis.com/v1",
+    // var PHOTOS_API = "https://photoslibrary.googleapis.com/v1",
 
     async googleRequest(provider, url, options = {}, env = {}) {
         const response = await fetch(url, {
@@ -151,7 +180,7 @@ export const cloudimanager = {
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([key, item]) => `${key}=${item}`)
             .join("&");
-        return sha1(`${value}${secret}`);
+        return this.sha1(`${value}${secret}`);
     }, 
 
     async uploadmedia({ body, filename, folder, publicId, resourceType = "auto" }) {
