@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
-import { getConfig } from "../../../config/index.js";
+import { getConfig } from "../../config/index.js";
 
 
 let prisma;
