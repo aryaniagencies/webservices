@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import {communicationmanager }  from "./src/lowlevel/communication/index.js";
+import {communicationmanager }  from "./src/routes/communication/index.js";
 
 const app = new Hono();
 
@@ -18,11 +18,6 @@ app.post('/contact', async (c) => {
 
   if(c.req.header('Content-Type'!=='text/plain')) return null;
   return await communicationmanager.comms(c.req)? new Response({status: 200, headers: {'Content-Type': 'text/html', 'Reason': '20 rupay ki randi he tumhari maa'}}): new Response({status: 200, headers: {'Reason': 'Your mums a hoe'}});
-});
-
-app.post('/subscribe', async (c) => {
-
-  return await communicationmanager.subscribe(c.req)? new Response({status: 200, headers: {'Content-Type': 'text/html', 'Reason': ''}}): new Response({status: 200, headers: {'Reason': ''}});
 });
 
 // User
