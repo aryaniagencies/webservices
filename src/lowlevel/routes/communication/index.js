@@ -257,7 +257,7 @@ export const communicationmanager = {
 
 }
 
-export const SocialMediaManager = {
+export const socialmediamanager = {
   
   async SchedulePost(content, time, platforms) {
 
