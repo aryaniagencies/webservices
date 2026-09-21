@@ -1,13 +1,14 @@
 # Webservices API
 
-Reusable, serverless-friendly JavaScript managers for AWS Lambda and other Node.js runtimes.
-The package uses native ES modules, esbuild, Prisma, TiDB, Amazon SES, and Amazon S3.
+Reusable, serverless-friendly JavaScript managers for Cloudflare Workers. The
+package uses native ES modules, Prisma Accelerate for TiDB, Cloudflare R2 for
+media, and HTTP APIs for email and notifications.
 
 ## Requirements
 
-- Node.js 20+
-- A TiDB connection string
-- AWS credentials with SES and/or S3 permissions when those managers are used
+- Node.js 20+ for local development and Wrangler
+- A Prisma Accelerate connection URL backed by TiDB
+- A Cloudflare account with Workers and R2 enabled
 
 ## Setup
 
@@ -15,20 +16,21 @@ The package uses native ES modules, esbuild, Prisma, TiDB, Amazon SES, and Amazo
 npm install
 cp .env.example .env
 npx prisma generate
-npm run build
+npm run dev
 ```
 
-Set `DATABASE_URL` to your TiDB connection string. Run `npx prisma db push` for a
-new database, or use `npx prisma migrate dev` during local development.
+Set `DATABASE_URL` to a Prisma Accelerate URL. Prisma Accelerate is required
+because Workers cannot open a normal TCP connection to TiDB. Run migrations from
+a Node.js environment with `npx prisma db push` or `npx prisma migrate deploy`.
 
 ## Importing the managers
 
-The built package can be imported from another plain JavaScript project:
+Managers can be imported by another JavaScript project. Pass the Worker `env`
+object to methods that access a service binding or secret:
 
 ```js
 import {
 	communicationManager,
-	databaseManager,
 	journalManager,
 	multimediaManager,
 } from "@your-scope/webservices";
@@ -37,74 +39,78 @@ await communicationManager.sendEmail({
 	to: "reader@example.com",
 	subject: "Welcome",
 	html: "<p>Thanks for joining.</p>",
-});
+}, env);
 
-const page = await journalManager.listPosts({ page: 1, pageSize: 10, publishedOnly: true });
+const page = await journalManager.listPosts({ page: 1, pageSize: 10, publishedOnly: true }, env);
 const post = await journalManager.createPost({
 	title: "A first post",
 	slug: "a-first-post",
 	content: "# Hello\n\nThis is **rich text**.",
 	authorId: "author-id",
-});
-await journalManager.updatePost(post.id, { title: "An updated post" });
-await journalManager.deletePost(post.id);
+}, env);
+await journalManager.updatePost(post.id, { title: "An updated post" }, env);
+await journalManager.deletePost(post.id, env);
 
 const upload = await multimediaManager.createUploadUrl({
 	key: "posts/cover.jpg",
 	contentType: "image/jpeg",
-});
+}, env);
 console.log(upload.url, page.items);
 ```
 
 `journalManager` stores Markdown content and exposes `renderRichText` for safe,
-sanitized HTML rendering. `createUploadUrl` returns a presigned S3 URL so large
-media files do not pass through a Lambda function.
+sanitized HTML rendering. `createUploadUrl` returns the Worker upload URL for
+an R2 object. The deployed API also supports `PUT`, `GET`, and `DELETE` at
+`/media/{key}`.
 
-## AWS Lambda deployment
+## Cloudflare Workers deployment
 
-This is Node.js code for AWS Lambda, not a browser-only worker runtime. AWS
-supports Node.js 20.x and 22.x Lambda runtimes. The repository includes an API
-Gateway HTTP handler and an AWS SAM template.
+This is a Cloudflare module Worker, not an AWS Lambda function. Cloudflare runs
+the application on V8 isolates using the standard `fetch(request, env)` API.
+Node.js is used for local tooling and package installation; the deployed code
+uses Worker-compatible APIs and Prisma's edge client.
 
-Build the Lambda artifact with:
+Create the R2 bucket named in `wrangler.toml`, then configure secrets:
 
 ```bash
-npm run sam:build
-sam deploy --guided
+npx wrangler r2 bucket create webservices-media
+npx wrangler secret put DATABASE_URL
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put EMAIL_FROM
+npm run deploy
 ```
 
-The template expects `DatabaseUrl`, `MediaBucket`, and `SesFromEmail` parameters.
-Store the TiDB URL in AWS Secrets Manager for production and inject it into the
-function environment through your deployment pipeline rather than committing it.
+`DATABASE_URL` should be a Prisma Accelerate URL, not a raw TiDB `mysql://` URL.
+For local development, put non-secret values in `.env` and use `wrangler dev`.
 
 The API routes are `GET /posts`, `GET /posts/{id-or-slug}`, `POST /posts`,
-`PATCH /posts/{id}`, and `DELETE /posts/{id}`.
+`PATCH /posts/{id}`, `DELETE /posts/{id}`, and media `PUT`, `GET`, and `DELETE`
+at `/media/{key}`.
 
-For a manually created Lambda, use `dist/handlers/http.handler` as the handler
-and deploy `dist`, `node_modules`, and `package.json` together. Run
-`npm run prisma:generate` during the build so Prisma's Lambda query engine is
-included.
-
-## Lambda handler usage
+## Worker handler usage
 
 ```js
 import { journalManager } from "@your-scope/webservices";
 
-export const handler = async () => ({
-	statusCode: 200,
-	headers: { "content-type": "application/json" },
-	body: JSON.stringify(await journalManager.listPosts({ page: 1, pageSize: 20 })),
-});
+export default {
+	async fetch(request, env) {
+		return new Response(JSON.stringify(
+			await journalManager.listPosts({ page: 1, pageSize: 20 }, env),
+		), { headers: { "content-type": "application/json" } });
+	},
+};
 ```
 
 ## Scripts
 
 ```bash
-npm run build       # bundles src/index.js to dist/index.js
+npm run build       # validates the Worker bundle with Wrangler
+npm run dev         # starts Wrangler local development
+npm run deploy      # generates Prisma and deploys to Cloudflare
 npm test            # runs the lightweight manager import tests
 npm run prisma:generate
 ```
 
 Service clients are initialized lazily on first use. No API keys are logged or
-read at module import time. For notifications, set `NOTIFICATION_WEBHOOK_URL`;
-for email, set the SES variables in `.env.example`.
+read at module import time. Email uses Resend's HTTP API, notifications use
+`NOTIFICATION_WEBHOOK_URL`, and media uses the `MEDIA_BUCKET` R2 binding.

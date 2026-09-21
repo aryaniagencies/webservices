@@ -1,28 +1,18 @@
-const readEnv = (name, fallback = undefined) => process.env[name] ?? fallback;
+const defaultEnv = globalThis.process?.env ?? {};
 
-let cachedConfig;
-
-export function getConfig() {
-  if (cachedConfig) return cachedConfig;
-
-  cachedConfig = Object.freeze({
-    nodeEnv: readEnv("NODE_ENV", "development"),
-    databaseUrl: readEnv("DATABASE_URL"),
-    aws: {
-      region: readEnv("AWS_REGION", "us-east-1"),
-      s3Bucket: readEnv("AWS_S3_BUCKET"),
-      sesFromEmail: readEnv("AWS_SES_FROM_EMAIL"),
-      sesConfigurationSet: readEnv("AWS_SES_CONFIGURATION_SET"),
-    },
-    notificationWebhookUrl: readEnv("NOTIFICATION_WEBHOOK_URL"),
-    mediaUrlTtlSeconds: Number(readEnv("MEDIA_URL_TTL_SECONDS", "900")),
+export function getConfig(env = defaultEnv) {
+  return Object.freeze({
+    nodeEnv: env.NODE_ENV ?? "development",
+    databaseUrl: env.DATABASE_URL,
+    resendApiKey: env.RESEND_API_KEY,
+    emailFrom: env.EMAIL_FROM,
+    notificationWebhookUrl: env.NOTIFICATION_WEBHOOK_URL,
+    publicApiUrl: env.PUBLIC_API_URL,
   });
-
-  return cachedConfig;
 }
 
-export function requireConfig(...names) {
-  const missing = names.filter((name) => !process.env[name]);
+export function requireConfig(env, ...names) {
+  const missing = names.filter((name) => !env[name]);
   if (missing.length) throw new Error(`Missing environment variables: ${missing.join(", ")}`);
-  return getConfig();
+  return getConfig(env);
 }
