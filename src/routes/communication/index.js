@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
-import { dbhandler } from "../dbhandler/index.js";
-import { cloudimanager } from "../cloud/index.js";
+//import { dbhandler } from "../dbhandler/index.js";
+// import { cloudimanager } from "../cloud/index.js";
 
 export const communicationmanager = {
   async handlerequest(c) {
@@ -33,22 +33,22 @@ export const communicationmanager = {
         throw new Error("Attachment must be a non-empty file");
       }
 
-      const uploaded = await cloudimanager.uploadmedia({
+      /* const uploaded = await cloudimanager.uploadmedia({
         body: attachment,
         filename: attachment.name,
         folder: "attachments",
       }, env);
-      attachmentUrl = uploaded.secure_url || uploaded.url;
+      attachmentUrl = uploaded.secure_url || uploaded.url; */
     }
 
-    await dbhandler.addDatabaseEntry("Communication", {
+    /* await dbhandler.addDatabaseEntry("Communication", {
       name,
       email,
       phone,
       regarding,
       message,
       attachmentUrl,
-    }, env);
+    }, env); */
 
     const adminHtml = `
       <div style="text-align: center;">
