@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-// import {communicationmanager }  from "./src/routes/communication/index.js";
+import {communicationmanager }  from "./src/routes/communication/index.js";
 
 const app = new Hono();
 
@@ -14,12 +14,11 @@ app.use('*', async (c, next) => {
 
 // Communications URLS
 // parse the request and sned the headers and body to /communications/index.js/comms
-/* app.post('/contact', async (c) => {
+app.post('/contact', async (c) => {
 
   if(c.req.header('Content-Type'!=='text/plain')) return null;
   return await communicationmanager.comms(c.req)? new Response({status: 200, headers: {'Content-Type': 'text/html', 'Reason': '20 rupay ki randi he tumhari maa'}}): new Response({status: 200, headers: {'Reason': 'Your mums a hoe'}});
 });
-*/ 
 
 // User
 // app.get('/users', users.handlerequest(options));

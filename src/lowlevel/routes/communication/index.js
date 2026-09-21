@@ -1,6 +1,11 @@
-import { getConfig, requireConfig } from "../../../config/index.js";
-import { addToDatabase, dbhandler } from "../dbhandler/index.js";
-import { cloudmanager } from "../cloud/index.js";
+//import { getConfig, requireConfig } from "../../../config/index.js";
+//import { addToDatabase, dbhandler } from "../dbhandler/index.js";
+//import { cloudmanager } from "../cloud/index.js";
+
+import { env } from "hono/adapter";
+
+// email includes
+
 
 class EmailMessageCompat {
   constructor(from, to, raw) {
@@ -9,6 +14,30 @@ class EmailMessageCompat {
     this.raw = raw;
   }
 }
+
+// Cloudflare Workers provides EmailMessage; use a compatible fallback locally.
+const EmailMessage = globalThis.EmailMessage || EmailMessageCompat;
+
+const assertSafeHeader = (value, name) => {
+  if (typeof value !== "string" || /[\r\n]/.test(value)) {
+    throw new Error(`Invalid email ${name}`);
+  }
+
+  return value.trim();
+};
+
+const encodeBase64 = (value) => {
+  const bytes = value instanceof Uint8Array
+    ? value
+    : new TextEncoder().encode(value);
+  let binary = "";
+
+  for (let index = 0; index < bytes.length; index += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  }
+
+  return btoa(binary);
+};
 
 export const emailmanager = {
 
@@ -177,7 +206,7 @@ export const communicationmanager = {
     
     // Upload to cloudinary if attachment exists
     // const attachurl = body['attachment'] ? await cloudmanager.uploaditem(attachment, "cloudinary", { folder: "attachments" }) : null;
-    if (attachment && attachment instanceof File) {
+    /* if (attachment && attachment instanceof File) {
 
       // Agar file ka binary buffer/content chahiye:
       const arrayBuffer = await attachment.arrayBuffer()
@@ -196,8 +225,9 @@ export const communicationmanager = {
         req.body,
         attachment: attachurl || null,
       }
-    ); */
+    );
 
+    */
     const adminHtml = `
       <div style="text-align: center;">
         <h1 style="color: pink;">New Message Received from: ${req.header('name')}</h1>
@@ -209,7 +239,7 @@ export const communicationmanager = {
     `;
     // <p>Attachment: ${attachurl ? `<a href="${google.com}">View Attachment</a>` : "No attachment"}</p>
     
-    return sendEmail(
+    return env.EMAIL.send(
       {
         from: env.WEB_EMAIL,
         to: env.WEB_EMAIL,
