@@ -20,7 +20,7 @@ export const communicationmanager = {
     const phone = String(body.phone || "").trim() || null;
     const regarding = String(body.regarding || body.subject || "").trim() || null;
     const message = String(body.message || body.text || "").trim();
-    const attachment = body.attachment;
+    // const attachment = body.attachment;
 
     if (!name || !email || !message) {
       throw new Error("name, email, and message are required");
@@ -29,6 +29,7 @@ export const communicationmanager = {
       throw new Error("A valid email address is required");
     }
 
+    var attachmentUrl='';
     /* if (attachment !== undefined && attachment !== null && attachment !== "") {
       if (typeof File === "undefined" || !(attachment instanceof File) || attachment.size === 0) {
         throw new Error("Attachment must be a non-empty file");
@@ -72,8 +73,7 @@ export const communicationmanager = {
       from: 'aryaniagencies@gmail.com',
       to: 'aryaniagencies@gmail.com',
       subject: `New Message Received from ${name}${regarding ? ` regarding: ${regarding}` : ""}`,
-      text: `${message}\n\nEmail: ${email}\nPhone: ${phone || "Not provided"}${attachmentUrl ? `\nAttachment: ${attachmentUrl}` : ""}`,
-      html: adminHtml,
+      html: adminHtml
     });
   },
 
