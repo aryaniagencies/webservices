@@ -213,7 +213,7 @@ export const communicationmanager = {
       {
         from: env.WEB_EMAIL,
         to: env.WEB_EMAIL,
-        subject: `New Message Received from ${name} regarding: ${reg}`,
+        subject: `New Message Received from ${req.header('name')} regarding: ${req.header('subject')}`,
         html: adminHtml
       }
     );
@@ -276,4 +276,4 @@ export async function sendNotification(payload, env = {}) {
   };
 }
 
-
+export const media = {SocialMediaManager, communicationmanager, emailmanager};
