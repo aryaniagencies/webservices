@@ -23,7 +23,7 @@ export async function getCloudItem(link, env = {}) {
 
 export const cloudmanager= {
 
-    provider,
+    provider: null,
 
     handlerequest(params) {
 
@@ -78,6 +78,12 @@ export const cloudmanager= {
     },
 
 };
+
+const providers = {};
+
+function providerFrom(link) {
+    return cloudmanager.getcloudprovier(link);
+}
 
 export const gdrivemanager = {
 
@@ -183,12 +189,15 @@ export const cloudimanager = {
         return this.sha1(`${value}${secret}`);
     }, 
 
-    async uploadmedia({ body, filename, folder, publicId, resourceType = "auto" }) {
+    async uploadmedia({ body, filename, folder, publicId, resourceType = "auto" }, env = globalThis.process?.env ?? {}) {
         if (!body) throw new Error("Cloudinary upload requires body");
 
-        const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+        const cloudName = env.CLOUDINARY_CLOUD_NAME;
         const apiKey = env.CLOUDINARY_API_KEY;
         const apiSecret = env.CLOUDINARY_API_SECRET;
+        if (!cloudName || !apiKey || !apiSecret) {
+            throw new Error("CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are required");
+        }
         const params = {
             timestamp: Math.floor(Date.now() / 1000),
             ...(folder ? { folder } : {}),
@@ -198,7 +207,7 @@ export const cloudimanager = {
         const form = new FormData();
         for (const [key, value] of Object.entries(params)) form.append(key, String(value));
         form.append("api_key", apiKey);
-        form.append("signature", await cloudinarySignature(params, apiSecret));
+        form.append("signature", await this.cloudinarySignature(params, apiSecret));
         form.append("file", body instanceof Blob ? body : new Blob([body]), filename || "upload"+Date.now());
 
         const response = await fetch(

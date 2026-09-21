@@ -1,87 +1,86 @@
-//import { getConfig, requireConfig } from "../../../config/index.js";
-//import { addToDatabase, dbhandler } from "../dbhandler/index.js";
-//import { cloudmanager } from "../cloud/index.js";
-
+import nodemailer from "nodemailer";
+import { dbhandler } from "../dbhandler/index.js";
+import { cloudimanager } from "../cloud/index.js";
 
 export const communicationmanager = {
-
-  handlerequest(params) {
-
-    handlerequest: async (c) => {
-    // Incoming Request Object (Native Web Request)
-    const rawRequest = c.req.raw 
-    
-    // Body, headers, URL direct read kar sakte ho
-    const url = c.req.url
-    const method = c.req.method
-
-    // switch
-
-    // Response return kar do
+  async handlerequest(c) {
     return c.json({
       status: "success",
       message: "Request directly processed by Communication Manager!",
-      path: url
-    })
-  }
+      path: c.req.url,
+    });
   },
-  
-  async comms(req) {
 
-    const attachment='';
-    const timestamp = new Date().toISOString();
-    
-    // Upload to cloudinary if attachment exists
-    // const attachurl = body['attachment'] ? await cloudmanager.uploaditem(attachment, "cloudinary", { folder: "attachments" }) : null;
-    /* if (attachment && attachment instanceof File) {
+  async comms(req, env) {
+    const body = await req.parseBody();
+    const name = String(body.name || "").trim();
+    const email = String(body.email || "").trim();
+    const phone = String(body.phone || "").trim() || null;
+    const regarding = String(body.regarding || body.subject || "").trim() || null;
+    const message = String(body.message || body.text || "").trim();
+    const attachment = body.attachment;
 
-      // Agar file ka binary buffer/content chahiye:
-      const arrayBuffer = await attachment.arrayBuffer()
-      const buffer = Buffer.from(arrayBuffer)
-      
-      // Yahan se buffer ko S3, Cloudinary par upload kar sakte ho
-      cloudmanager.upadloaditem(attachment, "cloudinary")
+    if (!name || !email || !message) {
+      throw new Error("name, email, and message are required");
     }
-    // add to database
-    /* await addToDatabase(
-      {
-        req.header('name'),
-        req.header('email'),
-        req.header('phone'),
-        req.header('regarding'),
-        req.body,
-        attachment: attachurl || null,
-      }
-    );
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      throw new Error("A valid email address is required");
+    }
 
-    */
+    let attachmentUrl = null;
+    if (attachment !== undefined && attachment !== null && attachment !== "") {
+      if (typeof File === "undefined" || !(attachment instanceof File) || attachment.size === 0) {
+        throw new Error("Attachment must be a non-empty file");
+      }
+
+      const uploaded = await cloudimanager.uploadmedia({
+        body: attachment,
+        filename: attachment.name,
+        folder: "attachments",
+      }, env);
+      attachmentUrl = uploaded.secure_url || uploaded.url;
+    }
+
+    await dbhandler.addDatabaseEntry("Communication", {
+      name,
+      email,
+      phone,
+      regarding,
+      message,
+      attachmentUrl,
+    }, env);
+
     const adminHtml = `
       <div style="text-align: center;">
-        <h1 style="color: pink;">New Message Received from: ${req.header('name')}</h1>
-        <small> Received at: ${timestamp}</small><br/><br/>
-        <p>${req.text()}</p><br/>
-        <p>Email: ${req.header('email')}</p>
-        <p>Phone: ${req.header('phone')}</p><br/>
+        <h1>New Message Received from: ${escapeHtml(name)}</h1>
+        <small>Received at: ${new Date().toISOString()}</small><br/><br/>
+        <p>${escapeHtml(message)}</p><br/>
+        <p>Email: ${escapeHtml(email)}</p>
+        <p>Phone: ${escapeHtml(phone || "Not provided")}</p>
+        <p>Attachment: ${attachmentUrl ? `<a href="${escapeHtml(attachmentUrl)}">View Attachment</a>` : "No attachment"}</p>
       </div>
     `;
-    // <p>Attachment: ${attachurl ? `<a href="${google.com}">View Attachment</a>` : "No attachment"}</p>
-    
-    return env.EMAIL.send(
-      {
-        from: req.header('sender'),
-        to: env.ADMIN_EMAIL,
-        subject: `New Message Received from ${req.header('name')} regarding: ${req.header('subject')}`,
-        html: adminHtml
-      }
-    );
+
+    const transporter = nodemailer.createTransport({
+      host: env.SMTP_HOST,
+      port: Number(env.SMTP_PORT || 587),
+      secure: env.SMTP_SECURE === true || env.SMTP_SECURE === "true",
+      auth: env.ADMIN_EMAIL && env.SMTP_PASS? { user: env.ADMIN_EMAIL, pass: env.SMTP_PASS }: undefined,
+      pass: xxgpaagpxx
+    });
+
+    return transporter.sendMail({
+      from: env.EMAIL_FROM || env.SMTP_FROM || env.SMTP_USER,
+      to: env.ADMIN_EMAIL,
+      subject: `New Message Received from ${name}${regarding ? ` regarding: ${regarding}` : ""}`,
+      text: `${message}\n\nEmail: ${email}\nPhone: ${phone || "Not provided"}${attachmentUrl ? `\nAttachment: ${attachmentUrl}` : ""}`,
+      html: adminHtml,
+    });
   },
 
   async subscribe(email) {
-
-    // add a database entry to the subscribers list database
-    dbhandler.addDatabaseEntry(any , {email});
-  }
-
+    return dbhandler.addDatabaseEntry("Subscriber", { email });
+  },
 };
 
 export const socialmediamanager = {
@@ -98,7 +97,16 @@ export const socialmediamanager = {
 
     // if user is "all", send to all users in inbox
   },
-
 };
 
 export const media = {socialmediamanager, communicationmanager};
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[character]));
+}

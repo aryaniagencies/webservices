@@ -11,12 +11,8 @@ app.use('*', async (c, next) => {
 // Communications URLS
 // parse the request and sned the headers and body to /communications/index.js/comms
 app.post('/contact', async (c) => {
-  if (c.req.header('Content-Type') !== 'text/plain') {
-    return c.json({ error: 'Content-Type must be text/plain' }, 415);
-  }
-
-  if(c.req.header('Content-Type'!=='text/plain')) return null;
-  return await communicationmanager.comms(c.req)? new Response({status: 200, headers: {'Content-Type': 'text/html', 'Reason': '20 rupay ki randi he tumhari maa'}}): new Response({status: 200, headers: {'Reason': 'Your mums a hoe'}});
+  const result = await communicationmanager.comms(c.req, c.env);
+  return c.json({ status: "success", messageId: result.messageId });
 });
 
 // User

@@ -22,3 +22,17 @@ model Post {
   @@index([published, publishedAt])
   @@index([authorId])
 }
+
+model Communication {
+  id            String   @id @default(cuid())
+  name          String
+  email         String
+  phone         String?
+  regarding     String?
+  message       String   @db.LongText
+  attachmentUrl String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  @@index([email])
+  @@index([createdAt])
+}
