@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { getMaxListeners } from "nodemailer/lib/mailer";
+// import { getMaxListeners } from "nodemailer/lib/mailer";
 import SMTPConnection from "nodemailer/lib/smtp-connection";
 //import { dbhandler } from "../dbhandler/index.js";
 // import { cloudimanager } from "../cloud/index.js";
@@ -62,7 +62,7 @@ export const communicationmanager = {
     `;
 
     const transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST || smtp.google.com,
+      host: env.SMTP_HOST || 'smtp.google.com',
       port: Number(env.SMTP_PORT || 465),
       secure: true,
       auth: { user: 'aryaniagencies@gmail.com', pass: 'xxgpaagpxx' }
@@ -78,7 +78,7 @@ export const communicationmanager = {
   },
 
   async subscribe(email) {
-    return dbhandler.addDatabaseEntry("Subscriber", { email });
+    //return dbhandler.addDatabaseEntry("Subscriber", { email });
   },
 };
 
