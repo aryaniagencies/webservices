@@ -1,4 +1,6 @@
 import nodemailer from "nodemailer";
+import { getMaxListeners } from "nodemailer/lib/mailer";
+import SMTPConnection from "nodemailer/lib/smtp-connection";
 //import { dbhandler } from "../dbhandler/index.js";
 // import { cloudimanager } from "../cloud/index.js";
 
@@ -27,18 +29,17 @@ export const communicationmanager = {
       throw new Error("A valid email address is required");
     }
 
-    let attachmentUrl = null;
-    if (attachment !== undefined && attachment !== null && attachment !== "") {
+    /* if (attachment !== undefined && attachment !== null && attachment !== "") {
       if (typeof File === "undefined" || !(attachment instanceof File) || attachment.size === 0) {
         throw new Error("Attachment must be a non-empty file");
       }
 
-      /* const uploaded = await cloudimanager.uploadmedia({
+      const uploaded = await cloudimanager.uploadmedia({
         body: attachment,
         filename: attachment.name,
         folder: "attachments",
       }, env);
-      attachmentUrl = uploaded.secure_url || uploaded.url; */
+      attachmentUrl = uploaded.secure_url || uploaded.url; 
     }
 
     /* await dbhandler.addDatabaseEntry("Communication", {
@@ -57,21 +58,19 @@ export const communicationmanager = {
         <p>${escapeHtml(message)}</p><br/>
         <p>Email: ${escapeHtml(email)}</p>
         <p>Phone: ${escapeHtml(phone || "Not provided")}</p>
-        <p>Attachment: ${attachmentUrl ? `<a href="${escapeHtml(attachmentUrl)}">View Attachment</a>` : "No attachment"}</p>
       </div>
     `;
 
     const transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: Number(env.SMTP_PORT || 587),
-      secure: env.SMTP_SECURE === true || env.SMTP_SECURE === "true",
-      auth: env.ADMIN_EMAIL && env.SMTP_PASS? { user: env.ADMIN_EMAIL, pass: env.SMTP_PASS }: undefined,
-      pass: xxgpaagpxx
+      host: env.SMTP_HOST || smtp.google.com,
+      port: Number(env.SMTP_PORT || 465),
+      secure: true,
+      auth: { user: 'aryaniagencies@gmail.com', pass: 'xxgpaagpxx' }
     });
 
     return transporter.sendMail({
-      from: env.EMAIL_FROM || env.SMTP_FROM || env.SMTP_USER,
-      to: env.ADMIN_EMAIL,
+      from: 'aryaniagencies@gmail.com',
+      to: 'aryaniagencies@gmail.com',
       subject: `New Message Received from ${name}${regarding ? ` regarding: ${regarding}` : ""}`,
       text: `${message}\n\nEmail: ${email}\nPhone: ${phone || "Not provided"}${attachmentUrl ? `\nAttachment: ${attachmentUrl}` : ""}`,
       html: adminHtml,
